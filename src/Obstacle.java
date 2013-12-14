@@ -56,6 +56,7 @@ public class Obstacle {
         fixtureDef.density = 0;
 
         this.body = this.game.physics.createBody(bodyDef);
+        this.body.setUserData(this);
         this.body.createFixture(fixtureDef);
 
         this.px = x * this.game.pixelsInMeter - this.width / 2;
