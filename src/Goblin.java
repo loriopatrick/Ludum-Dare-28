@@ -9,6 +9,16 @@ public class Goblin extends Enemy {
     }
 
     float damage;
+    float speed = 5f;
+
+    public void update(float delta) {
+        if (this.isDead()) return;
+        Vector2 heroPos = this.game.hero.getPosition();
+        Vector2 dir = heroPos.sub(this.getPosition());
+        dir.setAngle(dir.angle() + 45.0f - 90.0f * (float)Math.random());
+        dir.scl(speed / dir.len());
+        this.body.setLinearVelocity(dir);
+    }
 
     public void touchHero(Hero hero) {
         hero.applyDamage(this.damage);

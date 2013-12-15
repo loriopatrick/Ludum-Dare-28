@@ -1,14 +1,25 @@
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.TextureData;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
+import org.lwjgl.Sys;
+import sun.org.mozilla.javascript.internal.ast.Yield;
+
+import java.util.ArrayList;
 
 public class Level {
-    public Level(MainGame game, TextureRegion[] textures, float tileSize) {
+    public Level(MainGame game, TextureRegion[][] tiles, float tileSize, Color wall, Color enemySpawn, Color heroSpan) {
         this.game = game;
-        this.textures = textures;
+        this.tiles = tiles;
         this.tileSize = tileSize;
+
+        this.wall = wall;
+        this.enemySpawn = enemySpawn;
+        this.heroSpawn = heroSpan;
 
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.StaticBody;
@@ -20,11 +31,17 @@ public class Level {
     }
 
     MainGame game;
-    TextureRegion[] textures;
+    TextureRegion[][] tiles;
+    Vector2[] heroSpawns;
+    Vector2[] enemySpawns;
+    Color wall;
+    Color enemySpawn;
+    Color heroSpawn;
+
     float tileSize;
     Body body;
 
-    public void addRectFixture(Vector2 bottomLeft, Vector2 topRight) {
+    public void addRectFixture(Vector2 bottomLeft, Vector2 topRight, short groupIndex) {
         PolygonShape boundingBox = new PolygonShape();
         Vector2 center = topRight.sub(bottomLeft).scl(0.5f);
         boundingBox.setAsBox(center.x, center.y, center.add(bottomLeft), 0.0f);
@@ -33,43 +50,53 @@ public class Level {
         fixtureDef.shape = boundingBox;
         fixtureDef.friction = 0;
         fixtureDef.density = 500;
+        fixtureDef.filter.groupIndex = groupIndex;
 
         this.body.createFixture(fixtureDef);
     }
 
-    int[][] tiles;
 
-    public void createLevel() {
-        this.tiles = new int[12][12];
 
-        // build random level
-        for (int x = 0; x < this.tiles.length; ++x) {
-            for (int y = 0; y < this.tiles[x].length; ++y) {
-                boolean solid = (x == this.tiles.length - 1 || y == 0 || y == this.tiles[x].length - 1);
-                if (!solid && Math.random() > 0.8f) {
-                    solid = true;
-                }
+    public void setupLevel() {
+        TextureData td = this.tiles[0][0].getTexture().getTextureData();
+        td.prepare();
+        Pixmap pixmap = td.consumePixmap();
 
-                int tile = (int)(Math.random() * this.textures.length);
-                if (tile != this.textures.length) tile += 1;
-                if (solid) tile *= -1;
-
-                this.tiles[x][y] = solid? -1 : 1;
-            }
-        }
+        ArrayList<Vector2> eSpawns = new ArrayList<Vector2>();
+        ArrayList<Vector2> hSpawns = new ArrayList<Vector2>();
 
         // build fixtures
         for (int x = 0; x < this.tiles.length; ++x) {
-            for (int y = 0; y < this.tiles.length; ++y) {
-                if (this.tiles[x][y] < 0) {
-                    addRectFixture(new Vector2(x * this.tileSize, y * this.tileSize), new Vector2(x * this.tileSize + this.tileSize, y * this.tileSize + this.tileSize));
+            for (int y = 0; y < this.tiles[x].length; ++y) {
+                TextureRegion region = this.tiles[x][y];
+                Color pixel = new Color(pixmap.getPixel(region.getRegionX(), region.getRegionY()));
+
+                if (pixel.equals(wall)) {
+                    Vector2 bl = new Vector2(x, y).scl(this.tileSize);
+                    addRectFixture(bl, new Vector2(bl).add(this.tileSize, this.tileSize), (short)0);
+                } else if (pixel.equals(enemySpawn)) {
+                    Vector2 bl = new Vector2(x, y).scl(this.tileSize);
+                    eSpawns.add(new Vector2(bl).add(tileSize / 2, tileSize / 2));
+                    addRectFixture(bl, new Vector2(bl).add(this.tileSize, this.tileSize), (short) -2);
+                } else if (pixel.equals(heroSpawn)) {
+                    hSpawns.add(new Vector2((x + 0.5f) * tileSize, (y + 0.5f) * tileSize));
                 }
             }
         }
+
+        enemySpawns = new Vector2[eSpawns.size()];
+        eSpawns.toArray(enemySpawns);
+
+        heroSpawns = new Vector2[hSpawns.size()];
+        heroSpawns = hSpawns.toArray(heroSpawns);
     }
 
-    public Vector2 getHeroStartPos() {
-        return new Vector2(12, 12);
+    public Vector2 getHeroSpawn() {
+        return heroSpawns[(int)(Math.random() * heroSpawns.length)];
+    }
+
+    public Vector2 getEnemySpawn() {
+        return enemySpawns[(int)(Math.random() * enemySpawns.length)];
     }
 
     public void draw(SpriteBatch spriteBatch) {
@@ -77,13 +104,7 @@ public class Level {
 
         for (int x = 0; x < this.tiles.length; ++x) {
             for (int y = 0; y < this.tiles.length; ++y) {
-                int tile = this.tiles[x][y];
-                if (tile < 0) tile = 1 - tile;
-                else tile -= 1;
-
-                if (tile >= this.textures.length) tile = 0;
-
-                spriteBatch.draw(this.textures[tile],
+                spriteBatch.draw(this.tiles[x][y],
                         x * tilePixelSize, y * tilePixelSize,
                         tilePixelSize,
                         tilePixelSize);

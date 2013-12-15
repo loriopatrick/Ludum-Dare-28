@@ -11,8 +11,8 @@ import com.badlogic.gdx.physics.box2d.*;
 import org.lwjgl.Sys;
 
 public class Hero extends Character {
-    public Hero(MainGame game, TextureRegion[] frames) {
-        super(game, frames, 12, new Vector2(0, 0), (short) -1, 100);
+    public Hero(MainGame game, TextureRegion[] frames, Vector2 position) {
+        super(game, frames, 12, position, (short) -1, 100);
 
         this.moveSpeed = 10f;
         this.bullet = new TheBullet(this.game, new Animation(0.1f,

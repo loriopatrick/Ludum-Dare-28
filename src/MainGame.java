@@ -5,13 +5,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
-import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
-import org.lwjgl.Sys;
 
-import java.util.Date;
+import java.util.ArrayList;
 import java.util.Stack;
 
 public class MainGame implements Screen {
@@ -27,20 +25,25 @@ public class MainGame implements Screen {
         this.spriteBatch = new SpriteBatch();
 
         this.camera = new OrthographicCamera(1, 1);
-        this.camera.zoom = 0.2f;
+        this.camera.zoom = 0.15f;
 
         // load assets
         TextureRegion[] heroFrames = Character.loadFrames("assets/hero.png");
         TextureRegion[] goblinFrames = Character.loadFrames("assets/goblin.png");
-        TextureRegion[] textures = TextureRegion.split(new Texture("assets/grounds.png"), 16, 16)[0];
+        TextureRegion[][] tiles = TextureRegion.split(new Texture("assets/level1.png"), 1, 1);
 
         // load gameplay items
-        this.level = new Level(this, textures, 1);
-        this.level.createLevel();
+        this.level = new Level(this, tiles, 1, new Color(0x2d2e2eff), new Color(0x161717ff), new Color(0xff8c8aff));
+        this.level.setupLevel();
 
-        this.hero = new Hero(this, heroFrames);
-        this.hero.setPosition(this.level.getHeroStartPos());
-        this.goblin = new Goblin(this, goblinFrames, new Vector2(1, 1), 10, 10);
+        this.hero = new Hero(this, heroFrames, this.level.getHeroSpawn());
+
+        this.goblins = new ArrayList<Enemy>();
+        for (int i = 0; i < 20; ++i) {
+            this.goblins.add(new Goblin(this, goblinFrames, this.level.getEnemySpawn(), 10, 10));
+        }
+
+        this.decals = new ArrayList<Decal>();
     }
 
     private float width;
@@ -57,7 +60,8 @@ public class MainGame implements Screen {
 
     public Level level;
     public Hero hero;
-    public Goblin goblin;
+    public ArrayList<Enemy> goblins;
+    public ArrayList<Decal> decals;
 
     private boolean hitEdge = true;
 
@@ -68,7 +72,9 @@ public class MainGame implements Screen {
         gl.glClear(gl.GL_COLOR_BUFFER_BIT);
 
         this.hero.update(delta);
-        this.goblin.update(delta);
+        for (Enemy goblin : goblins) {
+            goblin.update(delta);
+        }
 
         // update the camera position;
         float padding = 15f;
@@ -111,11 +117,17 @@ public class MainGame implements Screen {
         spriteBatch.begin();
         spriteBatch.setColor(1, 1, 1, 1);
         this.level.draw(spriteBatch);
-        this.goblin.draw(delta, spriteBatch);
+        for (Decal decal : decals) {
+            decal.draw(spriteBatch);
+        }
+
         this.hero.draw(delta, spriteBatch);
+        for (Enemy goblin : goblins) {
+            goblin.draw(delta, spriteBatch);
+        }
         spriteBatch.end();
 
-        debug.render(this.physics, camera.combined.scl(this.pixelsInMeter));
+//        debug.render(this.physics, camera.combined.scl(this.pixelsInMeter));
     }
 
     @Override

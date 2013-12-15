@@ -74,6 +74,7 @@ public class Character {
         this._deathPosition = getRenderPosition();
         this._dead = true;
         destroyPhysics();
+        this.game.decals.add(new Decal(frames[6], _deathPosition.x, _deathPosition.y, this.width, this.height));
     }
 
     public boolean isDead() {
@@ -111,7 +112,6 @@ public class Character {
 
     public void draw(float delta, SpriteBatch spriteBatch) {
         if (isDead()) {
-            spriteBatch.draw(frames[6], _deathPosition.x, _deathPosition.y, this.width, this.height);
             return;
         }
 
