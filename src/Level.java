@@ -71,6 +71,10 @@ public class Level {
                 TextureRegion region = this.tiles[x][y];
                 Color pixel = new Color(pixmap.getPixel(region.getRegionX(), region.getRegionY()));
 
+                if (x == 16 && y == 16) {
+                    System.out.println(pixel);
+                }
+
                 if (pixel.equals(wall)) {
                     Vector2 bl = new Vector2(x, y).scl(this.tileSize);
                     addRectFixture(bl, new Vector2(bl).add(this.tileSize, this.tileSize), (short)0);
@@ -110,5 +114,9 @@ public class Level {
                         tilePixelSize);
             }
         }
+    }
+
+    public void dispose() {
+        this.tiles[0][0].getTexture().dispose();
     }
 }

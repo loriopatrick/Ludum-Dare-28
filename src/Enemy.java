@@ -6,7 +6,10 @@ public class Enemy extends Character {
         super(game, frames, height, position, (short)-2, 10);
     }
 
-    public void touchHero(Hero hero) {
+    public void onHero(Hero hero) {
+    }
+
+    public void offHero(Hero hero) {
     }
 
     public void hitByTheBullet(TheBullet bullet) {

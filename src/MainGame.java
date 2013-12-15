@@ -1,5 +1,7 @@
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Sound;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -9,18 +11,17 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
-import com.sun.media.sound.EmergencySoundbank;
 
 import java.util.ArrayList;
 import java.util.Stack;
 
 public class MainGame implements Screen {
-    public MainGame(LudGame game, String levelName, String level, int goblins) {
+    public MainGame(LudGame game, LevelDef levelDef) {
 
         // Setup the CORE stuff
         this.game = game;
         this.physics = new World(new Vector2(0, 0), true);
-        this.collision = new GameCollision();
+        this.collision = new GameCollision(this);
         this.debug = new Box2DDebugRenderer(); // temp
         this.physics.setContactListener(this.collision);
         this.toDestroy = new Stack<Body>();
@@ -33,24 +34,43 @@ public class MainGame implements Screen {
         // load assets
         heroFrames = Character.loadFrames("assets/hero.png");
         goblinFrames = Character.loadFrames("assets/goblin.png");
-        TextureRegion[][] tiles = TextureRegion.split(new Texture("assets/" + level + ".png"), 1, 1);
+        goblinMageFrames = Character.loadFrames("assets/goblinMage.png");
+        TextureRegion[][] tiles = TextureRegion.split(new Texture("assets/" + levelDef.levelFile + ".png"), 1, 1);
+        bounce = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/bounce.wav"));
+        catchBullet = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/catch.wav"));
+        damage = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/damage.wav"));
+        shootArrow = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/shootArrow.wav"));
+        shootArrow.setVolume(0, 0.1f);
+        die = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/die.wav"));
 
         this.healthFrames = TextureRegion.split(new Texture("assets/health.png"), 16, 2)[0];
         this.font = new BitmapFont();
 
         // load gameplay items
-        this.level = new Level(this, tiles, 1, new Color(0x2d2e2eff), new Color(0x161717ff), new Color(0xff8c8aff));
+        this.level = new Level(this, tiles, 1, new Color(0x2d2e2eff), new Color(0x161717ff), new Color(0xff87e9ff));
         this.level.setupLevel();
 
         this.hero = new Hero(this, heroFrames, this.level.getHeroSpawn());
 
         this.goblins = new ArrayList<Enemy>();
-        for (int i = 0; i < goblins; ++i) {
+        for (int i = 0; i < levelDef.goblins; ++i) {
             this.goblins.add(new Goblin(this, goblinFrames, this.level.getEnemySpawn(), 5, 2));
         }
-
         this.decals = new ArrayList<Decal>();
+
+        TextureRegion arrow = TextureRegion.split(new Texture("arrow.png"), 8, 16)[0][0];
+
+        for (int i = 0; i < levelDef.mages; ++i) {
+            this.goblins.add(new GoblinMage(this, goblinMageFrames, arrow, this.level.getEnemySpawn(), 10, 5));
+        }
+
+        // save level info for restart
+        this.levelDef = levelDef;
+
+        announce("LEVEL: " + levelDef.levelName, 5.0f);
     }
+
+    private final LevelDef levelDef;
 
     private float width;
     private float height;
@@ -65,7 +85,14 @@ public class MainGame implements Screen {
     public final OrthographicCamera camera;
 
     public TextureRegion[] goblinFrames;
+    public TextureRegion[] goblinMageFrames;
     public TextureRegion[] heroFrames;
+
+    public Sound bounce;
+    public Sound catchBullet;
+    public Sound damage;
+    public Sound shootArrow;
+    public Sound die;
 
     public Level level;
     public Hero hero;
@@ -96,7 +123,7 @@ public class MainGame implements Screen {
 
         // update Hero & AI
         this.hero.update(delta);
-        for (int i = 0; i < goblins.size();) {
+        for (int i = 0; i < goblins.size(); ) {
             Enemy enemy = goblins.get(i);
             if (enemy.isDead()) {
                 goblins.remove(i);
@@ -162,7 +189,7 @@ public class MainGame implements Screen {
 
         uiSpriteBatch.begin();
         // draw health indicator
-        int healthFrame = (int)Math.max(Math.ceil(this.hero.health * 15.0 / 100.0), 0);
+        int healthFrame = (int) Math.max(Math.ceil(this.hero.health * 15.0 / 100.0), 0);
         uiSpriteBatch.draw(this.healthFrames[healthFrame], 10, 10, 220, 40);
         font.draw(uiSpriteBatch, "Health: " + this.hero.health + "%", 15, 35);
 
@@ -186,6 +213,20 @@ public class MainGame implements Screen {
             font.draw(uiSpriteBatch, "Catch your orb to continue to the next level.", 400, 400);
         }
         uiSpriteBatch.end();
+
+//        this.debug.render(this.physics, this.camera.combined.scl(this.pixelsInMeter));
+
+        if (this.hero.isDead()) {
+            restart();
+        }
+
+        if (this.goblins.size() == 0 && this.hero.hasBullet) {
+            this.game.nextLevel();
+        }
+    }
+
+    public void restart() {
+        this.game.setLevel(this.levelDef);
     }
 
     @Override
@@ -220,5 +261,14 @@ public class MainGame implements Screen {
     @Override
     public void dispose() {
         this.physics.dispose();
+        this.goblinFrames[0].getTexture().dispose();
+        this.healthFrames[0].getTexture().dispose();
+        this.heroFrames[0].getTexture().dispose();
+        this.bounce.dispose();
+        this.catchBullet.dispose();
+        this.damage.dispose();
+        this.shootArrow.dispose();
+        this.die.dispose();
+        this.level.dispose();
     }
 }

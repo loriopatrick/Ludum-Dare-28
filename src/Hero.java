@@ -62,6 +62,7 @@ public class Hero extends Character {
     }
 
     public void catchBullet(TheBullet bullet) {
+        this.game.catchBullet.play();
         bullet.destroy();
         this.hasBullet = true;
         int kills = bullet.getKillCount();
@@ -84,5 +85,10 @@ public class Hero extends Character {
         } else if (!this._goingUp) {
             this.bullet.draw(delta, spriteBatch, getPosition().add(0, -0.23f));
         }
+    }
+
+    public void applyDamage(float damage) {
+        super.applyDamage(damage);
+        this.game.damage.play();
     }
 }

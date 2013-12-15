@@ -75,6 +75,7 @@ public class Character {
         this._dead = true;
         destroyPhysics();
         this.game.decals.add(new Decal(frames[6], _deathPosition.x, _deathPosition.y, this.width, this.height));
+        this.game.die.play();
     }
 
     public boolean isDead() {
