@@ -2,6 +2,8 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.math.collision.BoundingBox;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
@@ -10,7 +12,7 @@ import com.badlogic.gdx.physics.box2d.PolygonShape;
 import java.sql.PseudoColumnUsage;
 
 public class Character {
-    public Character(MainGame game, TextureRegion[] frames, Vector2 position, short collisionLayer, float health) {
+    public Character(MainGame game, TextureRegion[] frames, int height, Vector2 position, short collisionLayer, float health) {
         this.game = game;
         this.frames = frames;
 
@@ -28,12 +30,12 @@ public class Character {
 
         PolygonShape boundingBox = new PolygonShape();
         boundingBox.setAsBox(0.5f * this.width / this.game.pixelsInMeter,
-                0.5f * (this.height - 6) / this.game.pixelsInMeter);
+                0.5f * (height) / this.game.pixelsInMeter);
 
         FixtureDef fixtureDef = new FixtureDef();
         fixtureDef.shape = boundingBox;
         fixtureDef.friction = 0;
-        fixtureDef.density = 100;
+        fixtureDef.density = 500;
         fixtureDef.filter.groupIndex = collisionLayer;
 
         this.body = this.game.physics.createBody(bodyDef);
@@ -69,7 +71,7 @@ public class Character {
     private boolean _dead;
 
     public void die() {
-        this._deathPosition = getRenderPosition().sub(this.width / 2, this.height / 2);
+        this._deathPosition = getRenderPosition();
         this._dead = true;
         destroyPhysics();
     }
@@ -83,8 +85,8 @@ public class Character {
     private int _aniFrame = 0;
     private int _aniFrames = 2;
 
-    private boolean _flipHorizontal;
-    private boolean _goingUp;
+    protected boolean _flipHorizontal;
+    protected boolean _goingUp;
 
     public Vector2 getRenderPosition() {
         Vector2 pos = getPosition().scl(this.game.pixelsInMeter);
@@ -93,6 +95,18 @@ public class Character {
 
     public Vector2 getPosition() {
         return this.body.getPosition();
+    }
+
+    public BoundingBox getRenderBoundingBox(float padding) {
+        Vector2 position = getRenderPosition();
+        return new BoundingBox(new Vector3(position.x - padding, position.y - padding, -padding),
+                new Vector3(position.x + this.width + padding, position.y + this.height + padding, padding));
+    }
+
+    public void setPosition(Vector2 position) {
+        Vector2 bodyPos = this.body.getPosition();
+        bodyPos.x = position.x;
+        bodyPos.y = position.y;
     }
 
     public void draw(float delta, SpriteBatch spriteBatch) {
@@ -121,6 +135,7 @@ public class Character {
             _goingUp = velocity.y > 0;
         } else {
             _aniFrame = -1;
+            _goingUp = false;
         }
 
 

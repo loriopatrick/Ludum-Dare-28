@@ -12,9 +12,9 @@ import org.lwjgl.Sys;
 
 public class Hero extends Character {
     public Hero(MainGame game, TextureRegion[] frames) {
-        super(game, frames, new Vector2(0, 0), (short) -1, 100);
+        super(game, frames, 12, new Vector2(0, 0), (short) -1, 100);
 
-        this.moveSpeed = 5f;
+        this.moveSpeed = 10f;
         this.bullet = new TheBullet(this.game, new Animation(0.1f,
                 TextureRegion.split(new Texture("assets/bullet.png"), 16, 16)[0]), 4, 4);
     }
@@ -24,25 +24,32 @@ public class Hero extends Character {
     TheBullet bullet;
 
     public void update(float delta) {
-        float x = 0.0f, y = 0.0f;
+        Vector2 velocity = new Vector2(0, 0);
 
         if (Gdx.input.isKeyPressed(Input.Keys.W)) {
-            y += this.moveSpeed;
+            velocity.y += 1;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.A)) {
-            x -= this.moveSpeed;
+            velocity.x -= 1;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.D)) {
-            x += this.moveSpeed;
+            velocity.x += 1;
         }
 
         if (Gdx.input.isKeyPressed(Input.Keys.S)) {
-            y -= this.moveSpeed;
+            velocity.y -= 1;
         }
 
-        body.setLinearVelocity(x, y);
+        float scale = 0.0f;
+        float speed = velocity.len();
+        if (speed > 0) {
+            scale = this.moveSpeed / speed;
+        }
+
+
+        body.setLinearVelocity(velocity.scl(scale));
 
         if (hasBullet && Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
             Ray ray = this.game.camera.getPickRay(Gdx.input.getX(), Gdx.input.getY());
@@ -64,6 +71,8 @@ public class Hero extends Character {
 
         if (!this.hasBullet) {
             this.bullet.draw(delta, spriteBatch);
+        } else if (!this._goingUp) {
+            this.bullet.draw(delta, spriteBatch, getPosition().add(0, -0.23f));
         }
     }
 }

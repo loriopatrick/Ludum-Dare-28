@@ -58,11 +58,15 @@ public class TheBullet {
     }
 
     float _elapsedTime = 0.0f;
-    public void draw(float delta, SpriteBatch spriteBatch) {
+    public void draw(float delta, SpriteBatch spriteBatch, Vector2 pos) {
         _elapsedTime += delta;
         TextureRegion frame = this.animation.getKeyFrame(_elapsedTime, true);
-        Vector2 pos = this.body.getPosition();
-        spriteBatch.draw(frame, pos.x * this.game.pixelsInMeter - this.width / 2, pos.y * this.game.pixelsInMeter - this.height / 2, this.width, this.height);
+        pos = pos.scl(this.game.pixelsInMeter).sub(this.width / 2, this.height / 2);
+        spriteBatch.draw(frame, pos.x, pos.y, this.width, this.height);
+    }
+
+    public void draw(float delta, SpriteBatch spriteBatch) {
+        draw(delta, spriteBatch, this.body.getPosition());
     }
 
     private boolean _heroCollide = false;
