@@ -2,16 +2,21 @@ import com.badlogic.gdx.Game;
 
 public class LudGame extends Game {
     public LevelDef[] levelDefs = {
-            new LevelDef("One Goblin", "level2", 1, 0),
+            new LevelDef("One Goblin", "level4", 1, 0),
             new LevelDef("Two Goblins", "level2", 2, 0),
-            new LevelDef("Twenty Goblins", "level1", 20, 0),
-            new LevelDef("One Mage", "level2", 0, 1),
-            new LevelDef("Three Mages", "level2", 0, 3),
-            new LevelDef("Let the games begin", "level2", 5, 2),
-            new LevelDef("Ramp it up", "level1", 15, 3)
+            new LevelDef("Hold Down Left Mouse", "level6", 6, 0),
+            new LevelDef("Kill Combo", "level3", 30, 0),
+            new LevelDef("Bounce it off their heads", "level1", 20, 0),
+            new LevelDef("New Tactics", "level2", 0, 1),
+            new LevelDef("Getting Hard?", "level2", 0, 3),
+            new LevelDef("Here we go", "level4", 5, 2),
+            new LevelDef("Ramp it up a bit", "level1", 15, 3),
+            new LevelDef("Is One Orb Enough?", "level5", 10, 6)
     };
 
-    public int currentLevel = 0;
+    String[] levelFiles = {"level1", "level2", "level3", "level4", "level5"};
+
+    public int currentLevel = 4;
 
     @Override
     public void create() {
@@ -28,6 +33,12 @@ public class LudGame extends Game {
     }
 
     public void nextLevel() {
+        if (currentLevel >= levelDefs.length) {
+            setLevel(new LevelDef("Random Level",
+                    levelFiles[(int)Math.round(Math.random() * (levelFiles.length - 1))],
+                    (int)(Math.random() * 30), (int)(Math.random() * 10)));
+            return;
+        }
         setLevel(levelDefs[currentLevel++]);
     }
 

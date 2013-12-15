@@ -66,24 +66,21 @@ public class Level {
         ArrayList<Vector2> hSpawns = new ArrayList<Vector2>();
 
         // build fixtures
-        for (int x = 0; x < this.tiles.length; ++x) {
-            for (int y = 0; y < this.tiles[x].length; ++y) {
-                TextureRegion region = this.tiles[x][y];
+        for (int y = 0; y < this.tiles.length; ++y) {
+            for (int x = 0; x < this.tiles[y].length; ++x) {
+                int py = this.tiles.length - y - 1;
+                TextureRegion region = this.tiles[y][x];
                 Color pixel = new Color(pixmap.getPixel(region.getRegionX(), region.getRegionY()));
 
-                if (x == 16 && y == 16) {
-                    System.out.println(pixel);
-                }
-
                 if (pixel.equals(wall)) {
-                    Vector2 bl = new Vector2(x, y).scl(this.tileSize);
+                    Vector2 bl = new Vector2(x, py).scl(this.tileSize);
                     addRectFixture(bl, new Vector2(bl).add(this.tileSize, this.tileSize), (short)0);
                 } else if (pixel.equals(enemySpawn)) {
-                    Vector2 bl = new Vector2(x, y).scl(this.tileSize);
+                    Vector2 bl = new Vector2(x, py).scl(this.tileSize);
                     eSpawns.add(new Vector2(bl).add(tileSize / 2, tileSize / 2));
                     addRectFixture(bl, new Vector2(bl).add(this.tileSize, this.tileSize), (short) -2);
                 } else if (pixel.equals(heroSpawn)) {
-                    hSpawns.add(new Vector2((x + 0.5f) * tileSize, (y + 0.5f) * tileSize));
+                    hSpawns.add(new Vector2((x + 0.5f) * tileSize, (py + 0.5f) * tileSize));
                 }
             }
         }
@@ -106,10 +103,10 @@ public class Level {
     public void draw(SpriteBatch spriteBatch) {
         float tilePixelSize = this.tileSize * this.game.pixelsInMeter;
 
-        for (int x = 0; x < this.tiles.length; ++x) {
-            for (int y = 0; y < this.tiles.length; ++y) {
-                spriteBatch.draw(this.tiles[x][y],
-                        x * tilePixelSize, y * tilePixelSize,
+        for (int y = 0; y < this.tiles.length; ++y) {
+            for (int x = 0; x < this.tiles[y].length; ++x) {
+                spriteBatch.draw(this.tiles[y][x],
+                        x * tilePixelSize, (this.tiles.length - 1 - y) * tilePixelSize,
                         tilePixelSize,
                         tilePixelSize);
             }

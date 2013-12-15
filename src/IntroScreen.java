@@ -26,7 +26,6 @@ public class IntroScreen implements Screen {
         elapsedTime += v;
 
         if (elapsedTime > 2.0f || Gdx.input.isKeyPressed(Input.Keys.SPACE)) {
-            this.game.currentLevel = 0;
             this.game.nextLevel();
         }
 
