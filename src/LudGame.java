@@ -16,7 +16,7 @@ public class LudGame extends Game {
 
     String[] levelFiles = {"level1", "level2", "level3", "level4", "level5"};
 
-    public int currentLevel = 4;
+    public int currentLevel = 0;
 
     @Override
     public void create() {

@@ -1,7 +1,7 @@
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
-import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.*;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -42,6 +42,13 @@ public class MainGame implements Screen {
         shootArrow = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/shootArrow.wav"));
         shootArrow.setVolume(0, 0.1f);
         die = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/die.wav"));
+        shoot = Gdx.audio.newSound(Gdx.files.internal("assets/sounds/shoot.wav"));
+
+        String[] songs = {"music1.wav", "music2.wav"};
+        song = Gdx.audio.newMusic(Gdx.files.internal("assets/sounds/" + songs[(int)Math.round(Math.random() * (songs.length - 1))]));
+
+        song.setLooping(true);
+        song.play();
 
         this.healthFrames = TextureRegion.split(new Texture("assets/health.png"), 16, 2)[0];
         this.font = new BitmapFont();
@@ -93,6 +100,8 @@ public class MainGame implements Screen {
     public Sound damage;
     public Sound shootArrow;
     public Sound die;
+    public Sound shoot;
+    public Music song;
 
     public Level level;
     public Hero hero;
@@ -269,6 +278,8 @@ public class MainGame implements Screen {
         this.damage.dispose();
         this.shootArrow.dispose();
         this.die.dispose();
+        this.song.dispose();
+        this.shoot.dispose();
         this.level.dispose();
     }
 }

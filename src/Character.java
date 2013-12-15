@@ -9,8 +9,6 @@ import com.badlogic.gdx.physics.box2d.BodyDef;
 import com.badlogic.gdx.physics.box2d.FixtureDef;
 import com.badlogic.gdx.physics.box2d.PolygonShape;
 
-import java.sql.PseudoColumnUsage;
-
 public class Character {
     public Character(MainGame game, TextureRegion[] frames, int height, Vector2 position, short collisionLayer, float health) {
         this.game = game;

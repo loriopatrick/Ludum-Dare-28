@@ -7,8 +7,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.math.collision.Ray;
-import com.badlogic.gdx.physics.box2d.*;
-import org.lwjgl.Sys;
 
 public class Hero extends Character {
     public Hero(MainGame game, TextureRegion[] frames, Vector2 position) {
@@ -58,6 +56,7 @@ public class Hero extends Character {
 
             hasBullet = false;
             this.bullet.fire(pos, new Vector2(mouse.x, mouse.y).sub(pos));
+            this.game.shoot.play();
         }
     }
 
