@@ -20,6 +20,20 @@ public class TheBullet {
     int width;
     int height;
 
+    private int killCount = 0;
+
+    public void addKill() {
+        ++killCount;
+    }
+
+    public int getKillCount() {
+        return killCount;
+    }
+
+    public void resetKillCount() {
+        killCount = 0;
+    }
+
     public void create(Vector2 pos) {
         BodyDef bodyDef = new BodyDef();
         bodyDef.type = BodyDef.BodyType.DynamicBody;

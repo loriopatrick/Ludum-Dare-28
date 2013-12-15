@@ -1,6 +1,7 @@
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
@@ -8,12 +9,13 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.physics.box2d.Body;
 import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
+import com.sun.media.sound.EmergencySoundbank;
 
 import java.util.ArrayList;
 import java.util.Stack;
 
 public class MainGame implements Screen {
-    public MainGame(LudGame game) {
+    public MainGame(LudGame game, String levelName, String level, int goblins) {
 
         // Setup the CORE stuff
         this.game = game;
@@ -23,14 +25,18 @@ public class MainGame implements Screen {
         this.physics.setContactListener(this.collision);
         this.toDestroy = new Stack<Body>();
         this.spriteBatch = new SpriteBatch();
+        this.uiSpriteBatch = new SpriteBatch();
 
         this.camera = new OrthographicCamera(1, 1);
         this.camera.zoom = 0.15f;
 
         // load assets
-        TextureRegion[] heroFrames = Character.loadFrames("assets/hero.png");
-        TextureRegion[] goblinFrames = Character.loadFrames("assets/goblin.png");
-        TextureRegion[][] tiles = TextureRegion.split(new Texture("assets/level1.png"), 1, 1);
+        heroFrames = Character.loadFrames("assets/hero.png");
+        goblinFrames = Character.loadFrames("assets/goblin.png");
+        TextureRegion[][] tiles = TextureRegion.split(new Texture("assets/" + level + ".png"), 1, 1);
+
+        this.healthFrames = TextureRegion.split(new Texture("assets/health.png"), 16, 2)[0];
+        this.font = new BitmapFont();
 
         // load gameplay items
         this.level = new Level(this, tiles, 1, new Color(0x2d2e2eff), new Color(0x161717ff), new Color(0xff8c8aff));
@@ -39,8 +45,8 @@ public class MainGame implements Screen {
         this.hero = new Hero(this, heroFrames, this.level.getHeroSpawn());
 
         this.goblins = new ArrayList<Enemy>();
-        for (int i = 0; i < 20; ++i) {
-            this.goblins.add(new Goblin(this, goblinFrames, this.level.getEnemySpawn(), 10, 10));
+        for (int i = 0; i < goblins; ++i) {
+            this.goblins.add(new Goblin(this, goblinFrames, this.level.getEnemySpawn(), 5, 2));
         }
 
         this.decals = new ArrayList<Decal>();
@@ -58,6 +64,9 @@ public class MainGame implements Screen {
     private SpriteBatch spriteBatch;
     public final OrthographicCamera camera;
 
+    public TextureRegion[] goblinFrames;
+    public TextureRegion[] heroFrames;
+
     public Level level;
     public Hero hero;
     public ArrayList<Enemy> goblins;
@@ -65,15 +74,36 @@ public class MainGame implements Screen {
 
     private boolean hitEdge = true;
 
+    private SpriteBatch uiSpriteBatch;
+    private TextureRegion[] healthFrames;
+    private BitmapFont font;
+
+    private String _announceMessage = null;
+    private float _messageUpTime;
+    private float _messageUpTimeElapsed;
+
+    public void announce(String message, float time) {
+        _announceMessage = message;
+        _messageUpTime = time;
+    }
+
     @Override
     public void render(float delta) {
         GL11 gl = Gdx.gl11;
         gl.glClearColor(0, 0, 0, 1);
         gl.glClear(gl.GL_COLOR_BUFFER_BIT);
 
+
+        // update Hero & AI
         this.hero.update(delta);
-        for (Enemy goblin : goblins) {
-            goblin.update(delta);
+        for (int i = 0; i < goblins.size();) {
+            Enemy enemy = goblins.get(i);
+            if (enemy.isDead()) {
+                goblins.remove(i);
+                continue;
+            }
+            enemy.update(delta);
+            ++i;
         }
 
         // update the camera position;
@@ -92,42 +122,70 @@ public class MainGame implements Screen {
                 !this.camera.frustum.pointInFrustum(bottomRight) || !this.camera.frustum.pointInFrustum(topRight)) {
             hitEdge = true;
         }
-
         if (hitEdge) {
             Vector3 dir = center.sub(this.camera.position).scl(delta * 5);
             camera.translate(dir);
         }
-
-//        Vector2 heroPos = this.hero.getPosition().scl(this.pixelsInMeter);
-//        this.camera.position.x = heroPos.x;
-//        this.camera.position.y = heroPos.y;
-
-//        this.camera.position.x = thi
         this.camera.update();
 
+        // garbage collect physics bodies
         while (toDestroy.size() > 0) {
             Body body = toDestroy.pop();
             if (!body.isActive()) continue;
             this.physics.destroyBody(body);
         }
 
+        // update physics
         this.physics.step(delta, 10, 10);
 
         spriteBatch.setProjectionMatrix(this.camera.combined);
         spriteBatch.begin();
         spriteBatch.setColor(1, 1, 1, 1);
+
+        // draw level
         this.level.draw(spriteBatch);
+
+        // draw decals
         for (Decal decal : decals) {
             decal.draw(spriteBatch);
         }
 
+        // draw hero
         this.hero.draw(delta, spriteBatch);
+
+        // draw enemies
         for (Enemy goblin : goblins) {
             goblin.draw(delta, spriteBatch);
         }
+
         spriteBatch.end();
 
-//        debug.render(this.physics, camera.combined.scl(this.pixelsInMeter));
+        uiSpriteBatch.begin();
+        // draw health indicator
+        int healthFrame = (int)Math.max(Math.ceil(this.hero.health * 15.0 / 100.0), 0);
+        uiSpriteBatch.draw(this.healthFrames[healthFrame], 10, 10, 220, 40);
+        font.draw(uiSpriteBatch, "Health: " + this.hero.health + "%", 15, 35);
+
+        // draw enemy counter
+        uiSpriteBatch.draw(goblinFrames[0], 250, 0, 64, 128);
+        font.draw(uiSpriteBatch, "" + this.goblins.size(), 270, 15);
+
+        // draw announce message
+        if (_announceMessage != null && _messageUpTimeElapsed < _messageUpTime) {
+            _messageUpTimeElapsed += delta;
+
+            font.draw(uiSpriteBatch, _announceMessage, _announceMessage.length() * 5, 300);
+
+            if (_messageUpTimeElapsed >= _messageUpTime) {
+                _announceMessage = null;
+                _messageUpTimeElapsed = 0;
+            }
+        }
+
+        if (this.goblins.size() == 0 && !this.hero.hasBullet) {
+            font.draw(uiSpriteBatch, "Catch your orb to continue to the next level.", 400, 400);
+        }
+        uiSpriteBatch.end();
     }
 
     @Override

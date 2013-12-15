@@ -6,9 +6,7 @@
       <root url="jar://$USER_HOME$/lib/libgdx-0.9.9/gdx-backend-lwjgl.jar!/" />
       <root url="jar://$USER_HOME$/lib/libgdx-0.9.9/gdx-backend-lwjgl-natives.jar!/" />
     </CLASSES>
-    <JAVADOC>
-      <root url="file://$USER_HOME$/lib/libgdx-0.9.9/docs/api" />
-    </JAVADOC>
+    <JAVADOC />
     <SOURCES />
   </library>
 </component>

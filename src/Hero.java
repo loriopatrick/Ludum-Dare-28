@@ -64,6 +64,16 @@ public class Hero extends Character {
     public void catchBullet(TheBullet bullet) {
         bullet.destroy();
         this.hasBullet = true;
+        int kills = bullet.getKillCount();
+        bullet.resetKillCount();
+        if (kills > 1) {
+            this.game.announce(kills + " KILL COMBO!!", 1);
+        }
+    }
+
+    public void die() {
+        super.die();
+        this.game.announce("YOU DIED! Obviously.", 3.0f);
     }
 
     public void draw(float delta, SpriteBatch spriteBatch) {

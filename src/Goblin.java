@@ -26,5 +26,8 @@ public class Goblin extends Enemy {
 
     public void hitByTheBullet(TheBullet bullet) {
         this.applyDamage(bullet.getDamage());
+        if (this.isDead()) {
+            bullet.addKill();
+        }
     }
 }
